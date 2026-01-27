@@ -6,7 +6,7 @@ infrastructure files
 docker-compose up --build
 
 
-Config INTELIj.
+Config DEBUG INTELIj.
 --------------------  
 🔹 Crear configuración de debug
 	Arriba a la derecha → Add Configuration…
@@ -24,10 +24,10 @@ Debugger mode: Attach
 ------------ || PUERTOS :: ----------
 -------------------------------------
 TEST PORTS:
-	5005 → insurance-users
-	5006 → insurance-policies
-	5007 → insurance-middle
+	5005 → insurance-users ,
+	5006 → insurance-policies ,
+	5007 → insurance-middle 
 PORTS:
-	8000 → insurance-users
-	8001 → insurance-policies
+	8000 → insurance-users ,
+	8001 → insurance-policies ,
 	8002 → insurance-middle
