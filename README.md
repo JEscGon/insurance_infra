@@ -1,6 +1,11 @@
 # insurance_infra
 infrastructure files 
 
+### Ubicar docker-compose en la raiz de insurance.
+
+docker-compose up --build
+
+
 Config INTELIj.
 --------------------  
 🔹 Crear configuración de debug
