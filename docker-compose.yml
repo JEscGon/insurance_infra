@@ -1,0 +1,124 @@
+﻿services:
+  insurance-configserver:
+    build: ../insurance_configserver
+    container_name: insurance-configserver
+    ports:
+      - "8888:8888"
+    networks:
+      - insurance-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+  insurance-eureka:
+    build: ../insurance-eureka
+    container_name: insurance-eureka
+    ports:
+      - "8761:8761"
+    networks:
+      - insurance-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  postgres-users:
+    image: postgres:16
+    container_name: postgres-users
+    environment:
+      POSTGRES_DB: insurance-users
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - users_pg_data:/var/lib/postgresql/data
+    networks:
+      - insurance-net
+  postgres-policies:
+    image: postgres:16
+    container_name: postgres-policies
+    environment:
+      POSTGRES_DB: insurance-policies
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5433:5432"
+    volumes:
+      - policies_pg_data:/var/lib/postgresql/data
+    networks:
+      - insurance-net
+  insurance-users:
+    build: ../insurance-users
+    container_name: insurance-users
+    depends_on:
+      postgres-users:
+        condition: service_started
+      insurance-configserver:
+        condition: service_healthy
+      insurance-eureka:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/insurance-users
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      JAVA_TOOL_OPTIONS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    networks:
+      - insurance-net
+  insurance-policies:
+    build: ../insurance-policies
+    container_name: insurance-policies
+    depends_on:
+      postgres-policies:
+        condition: service_started
+      insurance-configserver:
+        condition: service_healthy
+      insurance-eureka:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-policies:5432/insurance-policies
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      JAVA_TOOL_OPTIONS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006
+    ports:
+      - "8081:8081"
+      - "5006:5006"
+    networks:
+      - insurance-net
+  insurance-middle:
+    build: ../insurance-middle
+    container_name: insurance-middle
+    depends_on:
+      insurance-users:
+        condition: service_started
+      insurance-policies:
+        condition: service_started
+      insurance-configserver:
+        condition: service_healthy
+      insurance-eureka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      USERS_SERVICE_URL: http://insurance-users:8080
+      POLICIES_SERVICE_URL: http://insurance-policies:8081
+      JAVA_TOOL_OPTIONS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007
+    ports:
+      - "8082:8082"
+      - "5007:5007"
+    networks:
+      - insurance-net
+networks:
+  insurance-net:
+    driver: bridge
+volumes:
+  users_pg_data:
+  policies_pg_data:
